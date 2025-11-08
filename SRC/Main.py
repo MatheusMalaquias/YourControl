@@ -14,7 +14,6 @@ from Products import (
 )
 from Config import definir_meta_total, definir_whatsapp
 
-
 def menu():
     while True:
         print("=== YourControl ===")

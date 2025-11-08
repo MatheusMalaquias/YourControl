@@ -1,3 +1,7 @@
+# ============================================================
+# === Analysis.py — Análise de Dados, Relatórios e Simulação ===
+# ============================================================
+
 from Database import get_connection
 from Utils import parse_date, format_currency
 from Config import obter_meta_total, obter_whatsapp, TWILIO_SID, TWILIO_TOKEN
@@ -7,21 +11,19 @@ import csv
 import sqlite3
 import os
 import shutil
-from datetime import datetime
 
-# Caminho base do projeto
+# Caminhos
 BASE_DIR = os.path.dirname(__file__)
 DATA_DIR = os.path.join(BASE_DIR, "data")
 BACKUP_DIR = os.path.join(BASE_DIR, "backups")
-
-# Caminho do banco principal
 DB_PATH = os.path.join(DATA_DIR, "yourcontrol.db")
 
-# Garante que as pastas existam
 os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(BACKUP_DIR, exist_ok=True)
 
-# === FUNÇÃO: criar backup automático ===
+# ============================================================
+# === BACKUP AUTOMÁTICO ===
+# ============================================================
 def criar_backup_automatico():
     if os.path.exists(DB_PATH):
         agora = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -30,24 +32,22 @@ def criar_backup_automatico():
         shutil.copy2(DB_PATH, backup_caminho)
         print(f"🗂️ Backup automático criado: {backup_nome}\n")
     else:
-        print("ℹ️ Nenhum banco encontrado para backup (será criado um novo ao salvar dados).\n")
-
-
-# === FUNÇÃO: obter conexão com o banco ===
-def get_connection():
-    # Cria backup sempre que o banco for aberto
-    criar_backup_automatico()
-    return sqlite3.connect(DB_PATH)
+        print("ℹ️ Nenhum banco encontrado para backup.\n")
 
 
 # ============================================================
-# === 1️⃣ RELATÓRIO LOCAL (mostra no terminal e exporta CSV)
+# === RELATÓRIO LOCAL ===
 # ============================================================
-
 def gerar_relatorio(exportar=False):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM produtos")
+    try:
+        cursor.execute("SELECT * FROM produtos")
+    except sqlite3.OperationalError:
+        print("❌ Tabela 'produtos' não encontrada. Cadastre um produto primeiro.\n")
+        conn.close()
+        return
+
     produtos = cursor.fetchall()
     conn.close()
 
@@ -93,19 +93,17 @@ def gerar_relatorio(exportar=False):
 
 
 # ============================================================
-# === 2️⃣ ENVIO DO RELATÓRIO VIA WHATSAPP (Twilio)
+# === ENVIO VIA WHATSAPP (Twilio) ===
 # ============================================================
-
 def enviar_relatorio_whatsapp():
     numero = obter_whatsapp()
     if not numero:
-        print("⚠️ Nenhum número de WhatsApp cadastrado. Defina-o nas configurações.\n")
+        print("⚠️ Nenhum número de WhatsApp cadastrado.\n")
         return
 
     to_whatsapp = f"whatsapp:+55{numero.strip().replace('+55', '')}"
     from_whatsapp = "whatsapp:+14155238886"  # número padrão Twilio Sandbox
 
-    # === PEGAR DADOS DO BANCO ===
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT nome, preco_compra, preco_venda, validade, entrada, saida FROM produtos")
@@ -116,14 +114,13 @@ def enviar_relatorio_whatsapp():
         print("⚠️ Nenhum produto cadastrado.\n")
         return
 
-    # === CALCULAR DADOS DO RELATÓRIO ===
     meta = obter_meta_total()
     lucro_total = sum((pv - pc) * saida for _, pc, pv, _, _, saida in produtos)
+
     produtos_vencendo = [nome for nome, _, _, val, _, _ in produtos
                          if val and (datetime.strptime(val, "%Y-%m-%d") - datetime.now()).days <= 3]
     mais_vendidos = sorted(produtos, key=lambda x: x[5], reverse=True)[:3]
 
-    # === FORMATAÇÃO BONITA (Markdown do WhatsApp) ===
     mensagem = (
         f"*📊 Relatório YourControl — {datetime.now().strftime('%d/%m/%Y')}*\n\n"
         f"💰 *Lucro atual:* {format_currency(lucro_total)}\n"
@@ -145,9 +142,8 @@ def enviar_relatorio_whatsapp():
         for nome in produtos_vencendo:
             mensagem += f" • {nome}\n"
 
-    mensagem += "\n📈 Continue acompanhando com *YourControl*!"
+    mensagem += "\n📈 Continue acompanhando com *YourControl*! 🚀"
 
-    # === ENVIO PELO TWILIO ===
     try:
         client = Client(TWILIO_SID, TWILIO_TOKEN)
         client.messages.create(from_=from_whatsapp, body=mensagem, to=to_whatsapp)
@@ -157,9 +153,8 @@ def enviar_relatorio_whatsapp():
 
 
 # ============================================================
-# === 3️⃣ SIMULAÇÃO E ANÁLISE DE AJUSTES
+# === SIMULAÇÃO E ANÁLISE ===
 # ============================================================
-
 def sugestao_precos_para_meta():
     conn = get_connection()
     cursor = conn.cursor()
@@ -185,12 +180,13 @@ def sugestao_precos_para_meta():
     print(f"Meta total: {format_currency(meta)}")
     print(f"Falta: {format_currency(falta)} → aumento médio necessário: {aumento_percentual*100:.1f}%\n")
 
-    print("💡 Sugestão de novos preços de venda:")
+    print("💡 Sugestão de novos preços:")
     for nome, pc, pv, saida in produtos:
         novo_preco = pv * (1 + aumento_percentual)
         print(f" - {nome}: de {format_currency(pv)} → sugerido {format_currency(novo_preco)}")
 
-    print("\n⚠️ Ajuste os preços com cuidado — considere o mercado e a concorrência.\n")
+    print("\n⚠️ Ajuste os preços com cuidado — considere o mercado.\n")
+
 
 def simulador_financeiro():
     conn = get_connection()
@@ -225,9 +221,8 @@ def simulador_financeiro():
             print("Valor inválido.\n")
             return
 
-        novo_lucro = lucro_atual + adicional
         aumento = adicional / lucro_atual
-        print(f"\n📈 Para lucrar {format_currency(adicional)} a mais, é necessário aumentar os preços em cerca de {aumento*100:.1f}%.\n")
+        print(f"\n📈 Para lucrar {format_currency(adicional)} a mais, aumente os preços em {aumento*100:.1f}%.\n")
         for nome, pc, pv, saida in produtos:
             novo_preco = pv * (1 + aumento)
             print(f" - {nome}: {format_currency(pv)} → {format_currency(novo_preco)}")
