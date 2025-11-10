@@ -1,4 +1,4 @@
-const API_BASE = "http://127.0.0.1:8000"; // Ajuste conforme o backend
+const API_BASE = "https://yourcontrol.onrender.com"; // Ajuste conforme o backend
 
 // === Alternar telas ===
 function mostrarTela(nome) {
