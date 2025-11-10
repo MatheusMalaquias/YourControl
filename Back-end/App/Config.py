@@ -5,9 +5,6 @@ from App.Database import get_connection
 
 load_dotenv()
 
-TWILIO_SID = os.getenv("TWILIO_SID")
-TWILIO_TOKEN = os.getenv("TWILIO_TOKEN")
-
 # === 1️⃣ META DE LUCRO TOTAL ===
 def definir_meta_total():
     try:
