@@ -2,17 +2,21 @@
 # === Analysis.py — Análise de Dados, Relatórios e Simulação ===
 # ============================================================
 
-from Database import get_connection
-from Utils import parse_date, format_currency
-from Config import obter_meta_total, obter_whatsapp, TWILIO_SID, TWILIO_TOKEN
+import os
+import csv
+import shutil
+import sqlite3
 from datetime import datetime
 from twilio.rest import Client
-import csv
-import sqlite3
-import os
-import shutil
 
-# Caminhos
+from App.Database import get_connection
+from App.Utils import parse_date, format_currency
+from App.Config import obter_meta_total, obter_whatsapp, TWILIO_SID, TWILIO_TOKEN
+
+# ============================================================
+# === Caminhos e inicialização ===
+# ============================================================
+
 BASE_DIR = os.path.dirname(__file__)
 DATA_DIR = os.path.join(BASE_DIR, "data")
 BACKUP_DIR = os.path.join(BASE_DIR, "backups")
@@ -24,6 +28,7 @@ os.makedirs(BACKUP_DIR, exist_ok=True)
 # ============================================================
 # === BACKUP AUTOMÁTICO ===
 # ============================================================
+
 def criar_backup_automatico():
     if os.path.exists(DB_PATH):
         agora = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -38,6 +43,7 @@ def criar_backup_automatico():
 # ============================================================
 # === RELATÓRIO LOCAL ===
 # ============================================================
+
 def gerar_relatorio(exportar=False):
     conn = get_connection()
     cursor = conn.cursor()
@@ -84,17 +90,19 @@ def gerar_relatorio(exportar=False):
     print("-" * 50)
 
     if exportar:
-        with open("relatorio_yourcontrol.csv", "w", newline='', encoding="utf-8") as f:
+        arquivo_csv = os.path.join(BASE_DIR, "relatorio_yourcontrol.csv")
+        with open(arquivo_csv, "w", newline='', encoding="utf-8") as f:
             writer = csv.writer(f)
             writer.writerow(["Produto", "Lucro", "Validade"])
             for nome, valor, validade in ranking:
                 writer.writerow([nome, valor, validade or ""])
-        print("✅ Relatório exportado para relatorio_yourcontrol.csv\n")
+        print(f"✅ Relatório exportado: {arquivo_csv}\n")
 
 
 # ============================================================
 # === ENVIO VIA WHATSAPP (Twilio) ===
 # ============================================================
+
 def enviar_relatorio_whatsapp():
     numero = obter_whatsapp()
     if not numero:
@@ -153,8 +161,9 @@ def enviar_relatorio_whatsapp():
 
 
 # ============================================================
-# === SIMULAÇÃO E ANÁLISE ===
+# === SUGESTÃO DE PREÇOS ===
 # ============================================================
+
 def sugestao_precos_para_meta():
     conn = get_connection()
     cursor = conn.cursor()
@@ -174,6 +183,10 @@ def sugestao_precos_para_meta():
         print("🎉 Parabéns! Sua meta já foi atingida ou ultrapassada.\n")
         return
 
+    if lucro_atual <= 0:
+        print("⚠️ Não é possível sugerir preços — lucro atual é zero ou negativo.\n")
+        return
+
     aumento_percentual = falta / lucro_atual
     print("\n=== SUGESTÃO DE AJUSTE DE PREÇOS ===")
     print(f"Lucro atual: {format_currency(lucro_atual)}")
@@ -187,6 +200,10 @@ def sugestao_precos_para_meta():
 
     print("\n⚠️ Ajuste os preços com cuidado — considere o mercado.\n")
 
+
+# ============================================================
+# === SIMULADOR FINANCEIRO ===
+# ============================================================
 
 def simulador_financeiro():
     conn = get_connection()
@@ -221,8 +238,14 @@ def simulador_financeiro():
             print("Valor inválido.\n")
             return
 
+        if lucro_atual <= 0:
+            print("⚠️ Não é possível simular aumento de lucro, pois o lucro atual é zero ou negativo.\n")
+            return
+
+        novo_lucro = lucro_atual + adicional
         aumento = adicional / lucro_atual
-        print(f"\n📈 Para lucrar {format_currency(adicional)} a mais, aumente os preços em {aumento*100:.1f}%.\n")
+
+        print(f"\n📈 Para lucrar {format_currency(adicional)} a mais, é necessário aumentar os preços em cerca de {aumento*100:.1f}%.\n")
         for nome, pc, pv, saida in produtos:
             novo_preco = pv * (1 + aumento)
             print(f" - {nome}: {format_currency(pv)} → {format_currency(novo_preco)}")
@@ -253,5 +276,6 @@ def simulador_financeiro():
     elif opc == '0':
         print("Voltando ao menu...\n")
         return
+
     else:
         print("Opção inválida.\n")

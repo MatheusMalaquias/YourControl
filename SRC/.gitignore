@@ -1,5 +1,0 @@
-# Arquivos e pastas ignorados
-__pycache__/
-*.pyc
-yourcontrol.db
-.env

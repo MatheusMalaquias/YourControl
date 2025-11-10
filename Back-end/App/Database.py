@@ -8,6 +8,7 @@ def get_connection():
     """Conecta ao banco SQLite e cria tabelas se necessário."""
     if not os.path.isdir(DB_DIR):
         os.makedirs(DB_DIR, exist_ok=True)
+
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
@@ -35,11 +36,10 @@ def get_connection():
 
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS configuracoes (
-        id INTEGER PRIMARY KEY CHECK (id = 1),
-        lucro_desejado_total REAL NOT NULL DEFAULT 0,
-        whatsapp TEXT
+        chave TEXT PRIMARY KEY,
+        valor TEXT
     )
     """)
-    cursor.execute("INSERT OR IGNORE INTO configuracoes (id, lucro_desejado_total, whatsapp) VALUES (1, 0, NULL)")
+
     conn.commit()
     return conn

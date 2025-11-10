@@ -1,5 +1,11 @@
-from Database import get_connection
-from Utils import parse_date
+from App.Database import get_connection
+from App.Utils import parse_date
+from datetime import datetime
+
+
+# =============================
+#  FUNÇÕES USADAS PELO TERMINAL
+# =============================
 
 def cadastrar_produto():
     conn = get_connection()
@@ -7,7 +13,7 @@ def cadastrar_produto():
 
     nome = input("Nome do produto: ").strip()
     if not nome:
-        print("Nome vazio. Cancelando cadastro.\n")
+        print("❌ Nome vazio. Cancelando cadastro.\n")
         return
 
     try:
@@ -16,11 +22,11 @@ def cadastrar_produto():
         preco_venda = float(input("Preço de venda (R$): ").strip() or 0)
         validade = input("Validade (AAAA-MM-DD) [opcional]: ").strip() or None
     except ValueError:
-        print("Entrada inválida.\n")
+        print("⚠️ Entrada inválida.\n")
         return
 
     if validade and not parse_date(validade):
-        print("Formato de data inválido. Use AAAA-MM-DD.\n")
+        print("⚠️ Formato de data inválido. Use AAAA-MM-DD.\n")
         return
 
     cursor.execute("""
@@ -41,13 +47,13 @@ def registrar_compra():
         idp = int(input("ID do produto: "))
         qtd = float(input("Quantidade comprada: "))
     except ValueError:
-        print("Entrada inválida.\n")
+        print("⚠️ Entrada inválida.\n")
         return
 
     cursor.execute("SELECT entrada FROM produtos WHERE id=?", (idp,))
     row = cursor.fetchone()
     if not row:
-        print("Produto não encontrado.\n")
+        print("❌ Produto não encontrado.\n")
         return
 
     nova_entrada = row[0] + qtd
@@ -58,8 +64,6 @@ def registrar_compra():
 
 
 def registrar_venda():
-    from datetime import datetime
-
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -68,13 +72,13 @@ def registrar_venda():
         idp = int(input("ID do produto vendido: "))
         qtd = float(input("Quantidade vendida: "))
     except ValueError:
-        print("Entrada inválida.\n")
+        print("⚠️ Entrada inválida.\n")
         return
 
     cursor.execute("SELECT entrada, saida, nome FROM produtos WHERE id=?", (idp,))
     row = cursor.fetchone()
     if not row:
-        print("Produto não encontrado.\n")
+        print("❌ Produto não encontrado.\n")
         return
 
     entrada, saida_atual, nome = row
@@ -91,27 +95,49 @@ def registrar_venda():
     print(f"💰 Venda registrada para {nome}.\n")
 
 
-def listar_produtos():
+def listar_produtos(exibir_ids=False):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT nome, preco_venda, entrada, saida FROM produtos")
-    produtos = cursor.fetchall()
-    conn.close()
 
-    if not produtos:
-        print("⚠️ Nenhum produto cadastrado.\n")
-        return
+    if exibir_ids:
+        cursor.execute("SELECT id, nome, preco_venda, entrada, saida FROM produtos")
+        produtos = cursor.fetchall()
+        conn.close()
 
-    print("\n=== LISTA DE PRODUTOS ===")
-    print(f"{'Produto':<20} | {'Valor de Venda':<15} | {'Quant. Estoque':<15}")
-    print("-" * 60)
+        if not produtos:
+            print("⚠️ Nenhum produto cadastrado.\n")
+            return
 
-    for nome, preco_venda, entrada, saida in produtos:
-        estoque = entrada - saida
-        print(f"{nome:<20} | R${preco_venda:<14.2f} | {estoque:<15}")
+        print("\n=== LISTA DE PRODUTOS ===")
+        print(f"{'ID':<5} | {'Produto':<20} | {'Valor de Venda':<15} | {'Estoque':<10}")
+        print("-" * 60)
 
-    print("-" * 60)
-    print(f"Total de produtos: {len(produtos)}\n")
+        for idp, nome, preco_venda, entrada, saida in produtos:
+            estoque = entrada - saida
+            print(f"{idp:<5} | {nome:<20} | R${preco_venda:<14.2f} | {estoque:<10}")
+
+        print("-" * 60)
+        print(f"Total de produtos: {len(produtos)}\n")
+    else:
+        cursor.execute("SELECT nome, preco_venda, entrada, saida FROM produtos")
+        produtos = cursor.fetchall()
+        conn.close()
+
+        if not produtos:
+            print("⚠️ Nenhum produto cadastrado.\n")
+            return
+
+        print("\n=== LISTA DE PRODUTOS ===")
+        print(f"{'Produto':<20} | {'Valor de Venda':<15} | {'Quant. Estoque':<15}")
+        print("-" * 60)
+
+        for nome, preco_venda, entrada, saida in produtos:
+            estoque = entrada - saida
+            print(f"{nome:<20} | R${preco_venda:<14.2f} | {estoque:<15}")
+
+        print("-" * 60)
+        print(f"Total de produtos: {len(produtos)}\n")
+
 
 def excluir_produto():
     conn = get_connection()
@@ -145,6 +171,7 @@ def excluir_produto():
     conn.commit()
     conn.close()
     print(f"✅ Produto '{nome}' e suas vendas foram removidos com sucesso.\n")
+
 
 def editar_produto():
     conn = get_connection()
@@ -186,7 +213,7 @@ def editar_produto():
         entrada_nova = input(f"Nova quantidade total [{entrada}]: ").strip()
         entrada_nova = float(entrada_nova) if entrada_nova else entrada
     except ValueError:
-        print("Valor inválido para quantidade.\n")
+        print("⚠️ Valor inválido para quantidade.\n")
         conn.close()
         return
 
@@ -194,7 +221,7 @@ def editar_produto():
         preco_compra_novo = input(f"Novo preço de compra [{preco_compra}]: ").strip()
         preco_compra_novo = float(preco_compra_novo) if preco_compra_novo else preco_compra
     except ValueError:
-        print("Valor inválido para preço de compra.\n")
+        print("⚠️ Valor inválido para preço de compra.\n")
         conn.close()
         return
 
@@ -202,7 +229,7 @@ def editar_produto():
         preco_venda_novo = input(f"Novo preço de venda [{preco_venda}]: ").strip()
         preco_venda_novo = float(preco_venda_novo) if preco_venda_novo else preco_venda
     except ValueError:
-        print("Valor inválido para preço de venda.\n")
+        print("⚠️ Valor inválido para preço de venda.\n")
         conn.close()
         return
 
@@ -217,3 +244,46 @@ def editar_produto():
     conn.commit()
     conn.close()
     print(f"✅ Produto '{nome_novo}' atualizado com sucesso!\n")
+
+
+# =============================
+#  FUNÇÕES USADAS PELA API
+# =============================
+
+def listar_produtos_api():
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, nome, preco_compra, preco_venda, validade FROM produtos")
+    produtos = [
+        {
+            "id": r[0],
+            "nome": r[1],
+            "preco_compra": r[2],
+            "preco_venda": r[3],
+            "validade": r[4]
+        }
+        for r in cursor.fetchall()
+    ]
+    conn.close()
+    return produtos
+
+
+def cadastrar_produto_api(data: dict):
+    nome = data.get("nome")
+    preco_compra = data.get("preco_compra", 0.0)
+    preco_venda = data.get("preco_venda", 0.0)
+    validade = data.get("validade")
+
+    if not nome:
+        return {"erro": "Nome obrigatório"}
+
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO produtos (nome, preco_compra, preco_venda, validade)
+        VALUES (?, ?, ?, ?)
+    """, (nome, preco_compra, preco_venda, validade))
+    conn.commit()
+    conn.close()
+
+    return {"mensagem": f"✅ Produto '{nome}' cadastrado com sucesso!"}
