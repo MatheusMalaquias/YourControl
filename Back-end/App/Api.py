@@ -8,7 +8,7 @@ app = FastAPI(title="YourControl API")
 # === Permitir acesso do front-end (CORS) ===
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # ou substitua por ["http://localhost:5173"] se usar Vite
+    allow_origins=["*"],  # ou substitua por ["http://matheusmalaquias.github.io"] se usar Vite
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
