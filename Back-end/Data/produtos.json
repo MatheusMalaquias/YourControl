@@ -1,0 +1,26 @@
+[
+    {
+        "id": 1,
+        "nome": "Banana",
+        "preco_compra": 5.0,
+        "preco_venda": 10.0,
+        "quantidade": 100,
+        "vendas": 0
+    },
+    {
+        "id": 2,
+        "nome": "Ma\u00e7a",
+        "preco_compra": 10.0,
+        "preco_venda": 15.0,
+        "quantidade": 100,
+        "vendas": 0
+    },
+    {
+        "id": 3,
+        "nome": "Uva",
+        "preco_compra": 20.0,
+        "preco_venda": 30.0,
+        "quantidade": 100,
+        "vendas": 0
+    }
+]
