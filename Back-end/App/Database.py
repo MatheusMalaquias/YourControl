@@ -1,45 +1,20 @@
-import sqlite3
+import json
 import os
 
-DB_DIR = os.path.join(os.path.dirname(__file__), '..', 'Data')
-DB_PATH = os.path.join(DB_DIR, 'yourcontrol.db')
+DB_PATH = os.path.join(os.path.dirname(__file__), "..", "Data", "produtos.json")
+DB_PATH = os.path.abspath(DB_PATH)
 
-def get_connection():
-    """Conecta ao banco SQLite e cria tabelas se necessário."""
-    if not os.path.isdir(DB_DIR):
-        os.makedirs(DB_DIR, exist_ok=True)
+if not os.path.exists(os.path.dirname(DB_PATH)):
+    os.makedirs(os.path.dirname(DB_PATH))
 
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
+if not os.path.exists(DB_PATH):
+    with open(DB_PATH, "w") as f:
+        json.dump([], f)
 
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS produtos (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nome TEXT NOT NULL,
-        entrada REAL NOT NULL DEFAULT 0,
-        saida REAL NOT NULL DEFAULT 0,
-        preco_compra REAL NOT NULL DEFAULT 0,
-        preco_venda REAL NOT NULL DEFAULT 0,
-        validade TEXT
-    )
-    """)
+def load_db():
+    with open(DB_PATH, "r") as f:
+        return json.load(f)
 
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS vendas (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        produto_id INTEGER NOT NULL,
-        quantidade REAL NOT NULL,
-        data TEXT NOT NULL,
-        FOREIGN KEY(produto_id) REFERENCES produtos(id)
-    )
-    """)
-
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS configuracoes (
-        chave TEXT PRIMARY KEY,
-        valor TEXT
-    )
-    """)
-
-    conn.commit()
-    return conn
+def save_db(data):
+    with open(DB_PATH, "w") as f:
+        json.dump(data, f, indent=4)

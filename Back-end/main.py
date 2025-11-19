@@ -1,12 +1,15 @@
-import sys, os
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+import sys
+import os
+
+# Garantir que App e Routes possam ser importados
+sys.path.append(os.path.dirname(__file__))
 
 from App.Analysis import (
     gerar_relatorio,
-    enviar_relatorio_whatsapp,
     sugestao_precos_para_meta,
     simulador_financeiro
 )
+
 from Routes.Products import (
     cadastrar_produto,
     registrar_compra,
@@ -15,11 +18,13 @@ from Routes.Products import (
     excluir_produto,
     editar_produto
 )
+
 from App.Config import definir_meta_total, definir_whatsapp
+
 
 def menu():
     while True:
-        print("=== YourControl ===")
+        print("\n=== YourControl ===")
         print("1) Cadastrar produto")
         print("2) Registrar compra")
         print("3) Registrar venda")
@@ -28,7 +33,7 @@ def menu():
         print("6) Ver relatório")
         print("7) Exportar relatório CSV")
         print("8) Definir número do WhatsApp")
-        print("9) Enviar relatório via WhatsApp")
+        print("9) Enviar relatório via WhatsApp (desativado)")
         print("10) Excluir produto")
         print("11) Editar produto")
         print("12) Sugerir novos preços para atingir a meta")
@@ -45,16 +50,17 @@ def menu():
         elif opc == '6': gerar_relatorio()
         elif opc == '7': gerar_relatorio(exportar=True)
         elif opc == '8': definir_whatsapp()
-        elif opc == '9': enviar_relatorio_whatsapp()
+        elif opc == '9': print("Função WhatsApp desativada no momento.")
         elif opc == '10': excluir_produto()
         elif opc == '11': editar_produto()
         elif opc == '12': sugestao_precos_para_meta()
         elif opc == '13': simulador_financeiro()
         elif opc == '0':
-            print("Saindo...\n")
+            print("Saindo...")
             break
         else:
             print("Opção inválida.\n")
+
 
 if __name__ == "__main__":
     menu()

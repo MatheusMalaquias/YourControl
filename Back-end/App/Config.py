@@ -1,56 +1,30 @@
+import json
 import os
-import sqlite3
-from dotenv import load_dotenv
-from App.Database import get_connection
 
-load_dotenv()
+META_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "Data", "meta.json"))
 
-# === 1️⃣ META DE LUCRO TOTAL ===
+if not os.path.exists(META_PATH):
+    with open(META_PATH, "w") as f:
+        json.dump({"meta": 0, "whatsapp": ""}, f)
+
+def load_meta():
+    with open(META_PATH, "r") as f:
+        return json.load(f)
+
+def save_meta(data):
+    with open(META_PATH, "w") as f:
+        json.dump(data, f, indent=4)
+
 def definir_meta_total():
-    try:
-        meta = float(input("Digite o valor da meta total de lucro (R$): ").replace(",", "."))
-    except ValueError:
-        print("❌ Valor inválido. Digite apenas números.\n")
-        return
+    meta = float(input("Meta total de lucro: "))
+    data = load_meta()
+    data["meta"] = meta
+    save_meta(data)
+    print("Meta salva!\n")
 
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute("INSERT OR REPLACE INTO configuracoes (chave, valor) VALUES (?, ?)", ("meta_total", meta))
-    conn.commit()
-    conn.close()
-
-    print(f"✅ Meta total de lucro definida: R$ {meta:,.2f}\n")
-
-
-def obter_meta_total():
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT valor FROM configuracoes WHERE chave = ?", ("meta_total",))
-    row = cursor.fetchone()
-    conn.close()
-    return float(row[0]) if row else 0.0
-
-
-# === 2️⃣ NÚMERO DO WHATSAPP ===
 def definir_whatsapp():
-    numero = input("Digite o número do WhatsApp (somente DDD e número, ex: 11987654321): ").strip()
-    if not numero.isdigit() or len(numero) < 10:
-        print("❌ Número inválido. Digite apenas números, com DDD.\n")
-        return
-
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute("INSERT OR REPLACE INTO configuracoes (chave, valor) VALUES (?, ?)", ("whatsapp", numero))
-    conn.commit()
-    conn.close()
-
-    print(f"✅ Número de WhatsApp salvo: {numero}\n")
-
-
-def obter_whatsapp():
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT valor FROM configuracoes WHERE chave = ?", ("whatsapp",))
-    row = cursor.fetchone()
-    conn.close()
-    return row[0] if row else None
+    numero = input("Número do WhatsApp (somente números): ")
+    data = load_meta()
+    data["whatsapp"] = numero
+    save_meta(data)
+    print("Número salvo!\n")

@@ -1,7 +1,0 @@
-fastapi
-uvicorn[standard]
-pydantic
-python-dotenv
-aiofiles
-python-multipart
-sqlite3  # (sqlite já está na stdlib, mas mantenha env)
