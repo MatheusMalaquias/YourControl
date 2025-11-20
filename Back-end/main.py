@@ -9,7 +9,6 @@ from App.Products import (
 )
 from App.Simulator import simulador_interativo
 
-
 def menu():
     while True:
         print("\n=== YourControl ===")
@@ -37,7 +36,6 @@ def menu():
             break
         else:
             print("Opção inválida!")
-
 
 if __name__ == "__main__":
     menu()
